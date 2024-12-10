@@ -1,0 +1,71 @@
+/*  ----------------------------
+//    BASE CSS RESET
+//    ---------------------------- */
+
+#book-content #sbo-rt-content div,
+#book-content #sbo-rt-content figure,
+#book-content #sbo-rt-content .figure,
+#book-content #sbo-rt-content code,
+#book-content #sbo-rt-content dir,
+#book-content #sbo-rt-content figcaption,
+#book-content #sbo-rt-content dl,
+#book-content #sbo-rt-content dt,
+#book-content #sbo-rt-content dd,
+#book-content #sbo-rt-content ul,
+#book-content #sbo-rt-content ol,
+#book-content #sbo-rt-content li
+#book-content #sbo-rt-content h1,
+#book-content #sbo-rt-content h2,
+#book-content #sbo-rt-content h3,
+#book-content #sbo-rt-content h4,
+#book-content #sbo-rt-content h5,
+#book-content #sbo-rt-content h6,
+#book-content #sbo-rt-content pre,
+#book-content #sbo-rt-content form,
+#book-content #sbo-rt-content fieldset,
+#book-content #sbo-rt-content menu,
+#book-content #sbo-rt-content input,
+#book-content #sbo-rt-content textarea,
+#book-content #sbo-rt-content p,
+#book-content #sbo-rt-content blockquote,
+#book-content #sbo-rt-content th,
+#book-content #sbo-rt-content td {
+    margin: 0;
+    padding: 0;
+    -webkit-margin-before: 0;
+    -webkit-margin-after: 0;
+    line-height: 1.5rem;
+}
+#book-content #sbo-rt-content div {
+    background-color: inherit;
+}
+#book-content #sbo-rt-content table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: none;
+    font-size: inherit;
+}
+#book-content #sbo-rt-content fieldset,
+#book-content #sbo-rt-content img {
+    border:0;
+    height: auto;
+}
+#book-content #sbo-rt-content address,
+#book-content #sbo-rt-content caption,
+#book-content #sbo-rt-content cite,
+#book-content #sbo-rt-content code,
+#book-content #sbo-rt-content dfn,
+#book-content #sbo-rt-content strong,
+#book-content #sbo-rt-content th,
+#book-content #sbo-rt-content var {
+    font-style:normal;
+    font-weight:normal;
+}
+#book-content #sbo-rt-content strong,
+#book-content #sbo-rt-content strong>code {
+    font-weight: bold;
+}
+#book-content #sbo-rt-content code {
+    font-family: "Consolas", Courier, monospace;
+}
+

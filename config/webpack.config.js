@@ -14,6 +14,18 @@ const config = (env, argv) =>
       background: PATHS.src + '/background.js',
     },
     devtool: argv.mode === 'production' ? false : 'source-map',
+    resolve: {
+      fallback: {
+        "util": require.resolve("util/"),
+        "path": require.resolve("path-browserify/"),
+        "fs": require.resolve("browserify-fs/"),
+        "assert": require.resolve("assert/"),
+        "stream": require.resolve("stream-browserify/"),
+        "constants": require.resolve("constants-browserify/"),
+        "zlib": require.resolve("browserify-zlib/"),
+        "os": require.resolve("os-browserify/")
+      }
+    }
   });
 
 module.exports = config;

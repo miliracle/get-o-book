@@ -1,21 +1,20 @@
 'use strict';
-
 // With background scripts you can communicate with popup
 // and contentScript files.
 // For more information on background script,
 // See https://developer.chrome.com/extensions/background_pages
+// https://blog.jim-nielsen.com/2022/generating-epub-file-in-browser/
+
+const imgRootPath = "https://learning.oreilly.com/";
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'GREETINGS') {
-    const message = `Hi ${
-      sender.tab ? 'Con' : 'Pop'
-    }, my name is Bac. I am from Background. It's great to hear from you.`;
+  if (request.type === 'SAVE_BOOK_CONTENT') {
+    const bookContent = request.payload;
+    console.log('Received book content:', bookContent);
 
-    // Log message coming from the `request` parameter
-    console.log(request.payload.message);
-    // Send a response message
-    sendResponse({
-      message,
-    });
+    // Return true to indicate that the response will be sent asynchronously
+    return true;
   }
 });
+
+

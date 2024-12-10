@@ -1,112 +1,139 @@
 'use strict';
 
 import './popup.css';
+import {
+  displayLoading,
+  displayError,
+  displayTableOfContents,
+  updateChapterStatus,
+} from './helpers/ui';
+import { buildEpub } from './helpers/epubBuilder';
 
-(function () {
-  // We will make use of Storage API to get and store `count` value
-  // More information on Storage API can we found at
-  // https://developer.chrome.com/extensions/storage
+class BookDownloader {
+  constructor() {
+    this.downloadBtn = document.getElementById('downloadBtn');
+    this.resultsContainer = document.getElementById('results');
+    this.statusContainer = document.getElementById('status');
+    this.initialize();
+  }
 
-  // To get storage access, we have to mention it in `permissions` property of manifest.json file
-  // More information on Permissions can we found at
-  // https://developer.chrome.com/extensions/declare_permissions
-  const counterStorage = {
-    get: (cb) => {
-      chrome.storage.sync.get(['count'], (result) => {
-        cb(result.count);
-      });
-    },
-    set: (value, cb) => {
-      chrome.storage.sync.set(
-        {
-          count: value,
-        },
-        () => {
-          cb();
-        }
-      );
-    },
-  };
+  initialize() {
+    this.downloadBtn.addEventListener('click', () => this.handleDownload());
+    document.addEventListener('DOMContentLoaded', () => this.initialize());
+  }
 
-  function setupCounter(initialValue = 0) {
-    document.getElementById('counter').innerHTML = initialValue;
+  updateStatus(message, className) {
+    this.statusContainer.textContent = message;
+    this.statusContainer.className = `status-container ${className}`;
+  }
 
-    document.getElementById('incrementBtn').addEventListener('click', () => {
-      updateCounter({
-        type: 'INCREMENT',
-      });
-    });
-
-    document.getElementById('decrementBtn').addEventListener('click', () => {
-      updateCounter({
-        type: 'DECREMENT',
-      });
+  async injectContentScript(tabId) {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      files: ['contentScript.js'],
     });
   }
 
-  function updateCounter({ type }) {
-    counterStorage.get((count) => {
-      let newCount;
-
-      if (type === 'INCREMENT') {
-        newCount = count + 1;
-      } else if (type === 'DECREMENT') {
-        newCount = count - 1;
-      } else {
-        newCount = count;
-      }
-
-      counterStorage.set(newCount, () => {
-        document.getElementById('counter').innerHTML = newCount;
-
-        // Communicate with content script of
-        // active tab by sending a message
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          const tab = tabs[0];
-
-          chrome.tabs.sendMessage(
-            tab.id,
-            {
-              type: 'COUNT',
-              payload: {
-                count: newCount,
-              },
-            },
-            (response) => {
-              console.log('Current count value passed to contentScript file');
-            }
-          );
-        });
-      });
+  async fetchBookInfo(tabId) {
+    console.log('Sending message to content script...');
+    return await chrome.tabs.sendMessage(tabId, {
+      type: 'FETCH_BOOK_INFO',
     });
   }
 
-  function restoreCounter() {
-    // Restore count value
-    counterStorage.get((count) => {
-      if (typeof count === 'undefined') {
-        // Set counter value as 0
-        counterStorage.set(0, () => {
-          setupCounter(0);
-        });
-      } else {
-        setupCounter(count);
-      }
+  async fetchChapterContent(tabId, chapterTitle, chapterUrl) {
+    const response = await chrome.tabs.sendMessage(tabId, {
+      type: 'FETCH_CHAPTER_CONTENT',
+      chapterTitle,
+      chapterUrl,
     });
+    console.log('Response received:', response);
+    return response;
   }
 
-  document.addEventListener('DOMContentLoaded', restoreCounter);
+  async saveBookContent(bookContent) {
+    console.log('Saving book content');
+    this.updateStatus('Building EPUB...', 'status-message');
 
-  // Communicate with background file by sending a message
-  chrome.runtime.sendMessage(
-    {
-      type: 'GREETINGS',
-      payload: {
-        message: 'Hello, my name is Pop. I am from Popup.',
-      },
-    },
-    (response) => {
-      console.log(response.message);
+    try {
+      await buildEpub(bookContent);
+      this.updateStatus('EPUB built successfully!', 'status-success');
+    } catch (error) {
+      console.error('Failed to build EPUB:', error);
+      this.updateStatus('Failed to build EPUB.', 'status-error');
     }
-  );
-})();
+  }
+
+  async fetchChapters(tabId, chapters) {
+    const bookChapters = [];
+
+    for (let i = 0; i < chapters.length; i++) {
+      const chapter = chapters[i];
+      // Add random delay between 1-10 seconds
+      await new Promise(resolve =>
+        setTimeout(resolve, Math.floor(Math.random() * 9000) + 1000)
+      );
+
+      const chapterContent = await this.fetchChapterContent(
+        tabId,
+        chapter.title,
+        chapter.url
+      );
+
+      console.log('Chapter content:', chapterContent.data);
+      bookChapters.push({
+        title: chapter.title,
+        content: chapterContent.data,
+      });
+
+      updateChapterStatus(i, chapterContent.success);
+    }
+
+    return bookChapters;
+  }
+
+  async handleDownload() {
+    try {
+      displayLoading(this.resultsContainer);
+
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+
+      if (!tab) {
+        throw new Error('No active tab found');
+      }
+
+      await this.injectContentScript(tab.id);
+      const response = await this.fetchBookInfo(tab.id);
+
+      if (response?.success) {
+        console.log('Book info:', response.data);
+        const { title, author, cover, chapters } = response.data;
+        displayTableOfContents(this.resultsContainer, chapters);
+
+        const bookChapters = await this.fetchChapters(tab.id, chapters);
+
+        await this.saveBookContent({
+          title,
+          author,
+          cover,
+          chapters: bookChapters,
+        });
+      } else {
+        console.log('Failed to fetch table of contents:', response?.message);
+        displayError(this.resultsContainer, 'Failed to fetch table of contents');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      displayError(
+        this.resultsContainer,
+        'An error occurred while fetching book contents'
+      );
+    }
+  }
+}
+
+// Initialize the downloader
+new BookDownloader();

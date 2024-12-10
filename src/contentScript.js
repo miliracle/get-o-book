@@ -1,4 +1,13 @@
+/* eslint-disable no-undef */
 'use strict';
+
+import {
+  findTableOfContents,
+  fetchChapterContent,
+  fetchBookAuthor,
+  fetchBookTitle,
+  fetchBookCover,
+} from './helpers/fetch';
 
 // Content script file will run in the context of web page.
 // With content script you can manipulate the web pages using
@@ -17,27 +26,63 @@ console.log(
   `Page title is: '${pageTitle}' - evaluated by Chrome extension's 'contentScript.js' file`
 );
 
-// Communicate with background file by sending a message
-chrome.runtime.sendMessage(
-  {
-    type: 'GREETINGS',
-    payload: {
-      message: 'Hello, my name is Con. I am from ContentScript.',
-    },
-  },
-  (response) => {
-    console.log(response.message);
-  }
-);
+// Prevent multiple injections
+if (!window.hasRun) {
+  window.hasRun = true;
 
-// Listen for message
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'COUNT') {
-    console.log(`Current count is ${request.payload.count}`);
-  }
+  // Log that content script is loaded
+  console.log('Content script loaded and ready to receive messages');
 
-  // Send an empty response
-  // See https://github.com/mozilla/webextension-polyfill/issues/130#issuecomment-531531890
-  sendResponse({});
-  return true;
-});
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    console.log('Content script received message:', request);
+
+    if (request.type === 'FETCH_BOOK_INFO') {
+      try {
+        console.log("Fetching book's info...");
+        const author = fetchBookAuthor();
+        const title = fetchBookTitle();
+        const cover = fetchBookCover();
+        const chapters = findTableOfContents();
+        console.log('Found chapters:', chapters);
+        sendResponse({
+          success: true,
+          data: {
+            author,
+            title,
+            cover,
+            chapters,
+          },
+        });
+      } catch (error) {
+        console.error('Error in content script:', error);
+        sendResponse({
+          success: false,
+          message: error.message,
+        });
+      }
+      return true; // Keep the message channel open for async response
+    }
+
+    if (request.type === 'FETCH_CHAPTER_CONTENT') {
+      fetchChapterContent({
+        title: request.chapterTitle,
+        url: request.chapterUrl,
+      })
+        .then((chapterContent) => {
+          console.log('Chapter content fetched:', request.chapterTitle);
+          sendResponse({
+            success: true,
+            data: chapterContent,
+          });
+        })
+        .catch((error) => {
+          console.error('Error in content script:', error);
+          sendResponse({
+            success: false,
+            message: error.message,
+          });
+        });
+      return true; // Keep the message channel open for async response
+    }
+  });
+}

@@ -8,17 +8,36 @@
     "build": "webpack --mode=production --config config/webpack.config.js",
     "pack": "node pack.js",
     "repack": "npm run build && npm run pack",
-    "format": "prettier --write --ignore-unknown \"{config,public,src}/**/*.{html,css,js,ts,json}\""
+    "format": "prettier --write --ignore-unknown \"{config,public,src}/**/*.{html,css,js,ts,json}\"",
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "^9.16.0",
     "adm-zip": "^0.5.16",
     "copy-webpack-plugin": "^10.2.4",
     "css-loader": "^6.11.0",
+    "eslint": "^9.16.0",
     "file-loader": "^6.2.0",
+    "globals": "^15.13.0",
     "mini-css-extract-plugin": "^2.9.2",
     "prettier": "^2.8.8",
     "webpack": "^5.97.1",
     "webpack-cli": "^4.10.0",
     "webpack-merge": "^5.10.0"
+  },
+  "dependencies": {
+    "assert": "^2.1.0",
+    "browserify-fs": "^1.0.0",
+    "browserify-zlib": "^0.2.0",
+    "constants-browserify": "^1.0.0",
+    "epub-gen": "^0.1.0",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
+    "os-browserify": "^0.3.0",
+    "path": "^0.12.7",
+    "path-browserify": "^1.0.1",
+    "stream-browserify": "^3.0.0",
+    "url": "^0.11.4",
+    "util": "^0.12.5"
   }
 }
